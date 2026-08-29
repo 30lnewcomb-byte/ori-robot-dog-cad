@@ -1,49 +1,34 @@
-# Ori Robot Dog CAD — Engineering Rules
+# Ori Engineering Rules
 
-These rules are the quality bar for every CAD change in this repository.
+## AI/CAD responsibility
 
-## 1. AI-generated CAD is never accepted on appearance alone
-A model that looks plausible, exports successfully, or imports into a CAD viewer is not automatically correct.
+AI-generated CAD is never considered correct merely because it looks good, imports successfully, or passes a superficial check. Before a change is called complete, verify geometry, interfaces, assembly, motion/clearance, manufacturability, and relevant engineering assumptions. If a property cannot be verified, mark it unverified.
 
-## 2. The person making the CAD owns the verification work
-When an AI or script creates or modifies geometry, it must perform the reasonable verification work itself. The user should not be expected to discover avoidable CAD mistakes.
+The agent making a CAD change is responsible for checking the result. The user should not have to discover mistakes that the agent could reasonably have caught.
 
-## 3. Verify the whole interface chain
-For every meaningful mechanical change, check as applicable:
-- mating geometry and datums
-- servo/bearing/fastener interfaces
-- clearances and collision risks
-- assembly order and tool access
-- motion and joint limits
-- printability and split strategy
-- structural load paths and assumptions
-- mass/center-of-mass implications
-- downstream assembly and exports
+## Source of truth
 
-## 4. One source of truth
-Dimensions that drive geometry belong in `Source/Parameters/master_parameters.py` unless there is a documented reason otherwise. Do not silently duplicate authoritative dimensions inside individual part generators.
+- `Source/CAD/` is the authoritative parametric CAD source.
+- `Source/Parameters/master_parameters.py` is the authoritative parameter source.
+- `CAD_STEP/` and `CAD_STL/` are deliverables/exports, not editable source.
+- `OpenSCAD/` is legacy/reference material unless explicitly promoted.
+- `Validation_and_Docs/` records validation, analysis, BOM, and handoff information.
 
-## 5. Do not silently revive old concepts
-Files named `concept`, `reference`, `legacy`, or similar are not authoritative unless the current design explicitly promotes them. Historical analyses may be useful evidence but must not override current source code or parameters.
+## Mechanical integrity
 
-## 6. Changes must be traceable
-A change should leave enough information in code, validation output, or documentation to answer:
-- what changed?
-- why did it change?
-- what was checked?
-- what remains unverified?
+- Preserve working interfaces unless a deliberate design change requires otherwise.
+- Hardware dimensions and axes must come from the authoritative hardware models/parameters.
+- A component must be checked in context where its loads, mating parts, motion, and assembly matter.
+- Do not claim a target architecture is implemented when the current CAD does not implement it.
+- Do not weaken, remove, or rewrite a validator merely to obtain PASS.
+- Prefer fixing the design or fixing an objectively incorrect test.
 
-## 7. Validation claims must be earned
-`VERIFIED` means there is a measurement, manufacturer source, reproducible calculation, or other concrete evidence. `ASSUMED`, `UNKNOWN`, and `BLOCKED` must remain explicit until resolved.
+## Arm reinforcement requirement
 
-## 8. Generated deliverables must not become the design source
-STEP/STL files are deliverables. The parametric source and master parameters remain the design authority. Regenerate deliverables from source after source changes.
+The arm's metal shaft inserts are structural reinforcement members, not cosmetic or optional hardware. The arm CAD must positively locate and retain them, provide adequate surrounding material, and provide a credible load path through the reinforced joint/link. Any arm change affecting a shaft interface must re-check shaft dimensions, retention, bearing/servo clearance, assembly access, and load-transfer assumptions.
 
-## 9. Preserve working interfaces by default
-An improvement that breaks an existing interface is not an improvement unless the interface change is deliberate, documented, and propagated through all affected parts.
+## Validation
 
-## 10. Prefer automation over memory
-If a check can be made repeatable, put it in validation/CI rather than relying on a human remembering to perform it.
+A green test is evidence only for what the test actually checks. Keep implementation status, analytical validation, and physical verification distinct.
 
-## Definition of done
-A CAD change is complete only when the relevant source builds, the relevant automated checks pass, the affected interfaces have been reviewed, and any remaining uncertainty is explicitly recorded.
+When changing geometry, run the narrowest relevant validation first, then the complete repository validation before declaring the change complete.
