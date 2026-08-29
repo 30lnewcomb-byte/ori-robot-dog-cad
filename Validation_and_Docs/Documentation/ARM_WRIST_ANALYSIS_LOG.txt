@@ -1,56 +1,53 @@
 ==========================================================================
-ORI ARM - WRIST/GRIPPER LOAD ANALYSIS  (frozen baseline geometry)
+ORI ARM - WRIST/GRIPPER LOAD ANALYSIS LOG
 ==========================================================================
 
-PETG density assumed      : 1270.00 g/cm^3
-Gravity                   : 9.81 m/s^2
-Safety margin (torque)    : 2.0x
-HTD-45H locked torque     : 4.41 N.m (VERIFIED)
-HTD-45H est. continuous    : 2.43 N.m (~55% locked, bus-servo practice)
+Status: CAD/analysis record only. No physical printing or hardware testing.
+The current arm implementation is in Source/CAD/Arm/arm.py.
 
-REAL PART MASSES (from CAD volume, PETG):
-  yaw_housing      152.5 g
-  upper_arm        101.3 g
-  forearm          197.5 g
-  gripper           19.5 g
-  TOTAL arm (PETG)   470.8 g
-  + 6x HTD-45H servos     384.0 g  (current design only)
-  => current arm all-up    854.8 g
+PETG density assumed        : 1.27 g/cm^3  (= 1.27e-3 g/mm^3)
+Gravity                    : 9.81 m/s^2
+Safety margin (torque)     : 2.0x
+HTD-45H nominal torque     : 4.41 N.m (parameterized hardware value)
+Estimated continuous value : 2.43 N.m (~55% of nominal; analysis convention, not a manufacturer guarantee)
+HTD-45H mass               : 64 g
 
-PAYLOAD / TOOL ASSUMPTIONS:
-  Target payload          : 500.0 g  (user spec)
-  Payload CG              : at gripper tip plane, centred, fully extended
-  Current gripper mass     : 19.5 g (includes its HTD-45H actuator)
-  Passive-gripper target   : <= 80 g (no actuator/motor/battery/controller)
+CURRENT ARCHITECTURE:
+  6-DOF arm.
+  Grip actuator remains in the forearm/wrist.
+  Interchangeable tool contains no servo, motor, battery, or controller.
+  Grip transmission in current CAD: spur gear -> coupler gear -> eccentric cam representation -> passive fingers.
+  Gear center distance target/parameter: 18 mm.
 
-GEOMETRY / MOMENT ARMS (worst case = arm horizontal, fully extended):
-  shoulder->elbow (L1)     : 70.0 mm
-  elbow->wrist  (L2)       : 60.0 mm
-  wrist->tool   (Lw)       : 28.0 mm
-  reach to wrist joint     : 188.0 mm
-  reach to tool CG/tip     : 216.0 mm
+MASS ACCOUNTING NOTE:
+  The current arm generator includes purchased servo envelope geometry inside several
+  returned CAD compounds so placement can be visualized. Those compounds must NOT be
+  assigned wholly to PETG density. Servo mass is accounted for separately at 64 g each.
+  A CAD-volume-derived PETG total is therefore only valid after the embedded servo
+  envelope volume is excluded or the source is refactored to return printed-only solids.
 
-STATIC PAYLOAD TORQUE (fully extended, horizontal, gravity):
-  Shoulder/Elbow hold payload : 1.059 N.m  (lever 216.0 mm)
-  Wrist ROLL/PITCH hold payload: 0.137 N.m  (lever 28.0 mm)
-  Wrist holds tool self-wt    : 0.003 N.m  (tool 19g, lever 14 mm)
+PAYLOAD TARGET:
+  500 g user target. This remains an engineering target, not a physically verified rating.
 
-GRIPPER ACTUATION (closing) REQUIREMENT:
-  Required grip force (mu=0.4) : 12.26 N  for 500.0 g payload
-  Jaw pivot->pad lever      : 15.0 mm
-  Closing torque at jaw pivot: 0.184 N.m  (BEFORE transmission)
-  With 2.0x margin       : 0.368 N.m
+CURRENT GEOMETRY:
+  shoulder->elbow : 70 mm
+  elbow->wrist    : 60 mm
+  wrist link      : 28 mm
+  grip depth      : 30 mm
+  grip target span: 44 mm
+  coupler        : Ø34 mm
 
-HTD-45H vs REQUIREMENTS:
-  Shoulder/Elbow req 1.059 N.m  vs locked 4.41 / cont 2.43 -> margin 2.3x
-  Wrist pose req     0.137 N.m  vs cont 2.43 -> margin 17.7x
-  Gripper close req  0.368 N.m (margined) vs cont 2.43 -> OK
+STATIC TORQUE RELATIONSHIPS:
+  Payload torque is computed from payload mass, gravity, and the relevant lever arm.
+  Wrist joints have much more torque capacity than the nominal 500 g gravity load.
+  Shoulder/elbow are the more demanding arm joints because they carry the longer lever.
 
-CONCLUSION (see Documentation/ARM_WRIST_ANALYSIS.md for full deliverables):
-  - Wrist actuators are NOT torque-limited by the 500 g payload (req 0.137 N.m << cont).
-  - Gripper closing torque is tiny (0.184 N.m); a SMALL servo or a
-    passive transmission from a wrist servo easily covers it.
-  - HTD-45H at wrist/gripper is OVERSIZED for torque; mass savings possible.
-  - Recommendation: servo-IN-WRIST drives passive gripper via a light
-    transmission (printed gear or shaft+linkage). Passive gripper <=80 g.
+VERIFICATION LIMITS:
+  Calculation does not prove printed stiffness, servo thermal capability, gear durability,
+  grasp reliability, dynamic loads, FDM anisotropy, fatigue life, or power-off backdrive behavior.
+
+HISTORY:
+  This log previously contained an erroneous PETG density label (1270 g/cm^3) and mixed
+  multiple generations of the gripper concept. This file is now a current-state record;
+  legacy architecture belongs in source/reference files rather than being treated as final.
 ==========================================================================
