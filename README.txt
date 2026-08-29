@@ -1,28 +1,44 @@
-ORI ROBOT DOG — MECHANICAL HANDOFF (drop-in repository root)
-=============================================================
-Status: CAD-final, parameterized, validated. No physical printing performed.
+ORI ROBOT DOG — CAD REPOSITORY
+==============================
 
-This repository has FIVE top-level folders. They are the whole project.
+This repository is the mechanical/CAD workspace for Ori Robot Dog.
 
-1) Source/            Parametric Python/CadQuery CAD (master_parameters.py = single source of truth).
-                        `pip install -r Source/requirements.txt` to set up the environment.
-2) Validation_and_Docs/  Validators (all PASS) + MECHANICAL_HANDOFF + BOM + jointmap.json.
-3) OpenSCAD/          Plain-text, AI-readable VIEW models (.scad). GitHub & ChatGPT can read these.
-                        NOTE: these are simplified summaries, NOT the manufactured parts.
-4) CAD_STEP/          THE AUTHORITATIVE GEOMETRY (18 .step files). Use these for printing/machining.
-                        See CAD_STEP/READ_ME_FIRST.txt — the better files are NOT in OpenSCAD, they are HERE.
-5) CAD_STL/           Print-ready meshes (12 .stl) matched to the STEP parts.
+SOURCE OF TRUTH
+  Source/Parameters/master_parameters.py   Master parameters for generated CAD.
+  Source/CAD/                              Parametric Python/CadQuery generators.
+  CAD_STEP/                               Authoritative high-fidelity STEP deliverables.
+  CAD_STL/                                Print-ready STL deliverables.
+  OpenSCAD/                               Simplified text-readable previews only.
+  Validation_and_Docs/                    Validation, engineering analysis, BOM, and handoff.
 
-WHERE IS THE GOOD CAD?
-  The high-fidelity STEP geometry is in CAD_STEP/ (and STL in CAD_STL/). The OpenSCAD/
-  folder is only a readable preview so ChatGPT/GitHub can 'see' the robot in text. Both are
-  in this repo; nothing is missing.
+IMPORTANT: STEP/STL exports are deliverables, not the design source. Regenerate them from
+parametric source after a design change.
 
-KEY NUMBERS
-  Robot 666x245x442 mm. 16x HTD-45H. 20 DOF (12 leg+6 arm+2 head).
-  28x 626ZZ bearings. 10x 6mm steel shafts. Passive gripper 22g. 500g payload feasible (analysis).
-  Validators: leg 11/11, robot 29/29, wrist 10/10, shafts 5/5.
+CURRENT CAD STATE
+  Robot envelope: validated by the current assembly build (exact dimensions are reported by
+                  the validation suite rather than copied here).
+  Leg architecture currently generated: 2 actuated joints per leg (hip pitch + knee).
+  Arm: 6-DOF with servo-in-wrist passive gripper.
+  Head: 2-DOF pan + pitch.
+  Current generated actuated DOF: 16 (8 legs + 6 arm + 2 head).
+  Target architecture: 20 DOF (12 leg + 6 arm + 2 head).
 
-DECISIONS NEEDED (see Validation_and_Docs/Documentation/MECHANICAL_HANDOFF.md)
-  - Pi 3 (control arch) vs Pi 4B (BOM): confirm board.
-  - Accept documented 141 MPa upper-link crash case, or add gusset later.
+The four hip-yaw joints exist in the software target map but are NOT implemented in the current
+leg CAD. See Validation_and_Docs/Documentation/KNOWN_BLOCKERS.md before treating those joints as real.
+
+ENGINEERING RULES
+  Read ENGINEERING_RULES.md. AI-generated geometry is not accepted by appearance alone.
+  Meaningful changes must be checked for geometry, interfaces, assembly, motion, manufacturability,
+  structural assumptions, mass effects, and downstream breakage.
+
+VALIDATION
+  GitHub Actions runs the static repository audit, CadQuery smoke build, leg validation, robot
+  validation, wrist validation, load analysis, shaft analysis, and arm/wrist load analysis.
+  These are CAD/calculation checks only; no physical printing or hardware validation is implied.
+
+UNRESOLVED ENGINEERING ITEMS
+  - Implement or deliberately remove/freeze the four hip-yaw joints.
+  - Pi 3 vs Pi 4 controller selection still affects electronics packaging.
+  - Upper-link crash-case reinforcement remains intentionally deferred pending physical evidence.
+  - Physical fit, backlash/wear, insert pull-out, seam strength, dynamics, and FDM anisotropy remain
+    unverified.
