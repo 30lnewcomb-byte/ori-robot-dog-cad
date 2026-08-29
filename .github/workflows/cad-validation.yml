@@ -28,7 +28,7 @@ jobs:
           python - <<'PY'
           import sys
           sys.path.insert(0, "Source/CAD/Master")
-          sys.path.insert(0, "Source")
+          sys.path.insert(0, "Source/CAD")
           from build_common import size_of
           from Legs.master_leg import make_leg_assembly
           from Torso.torso import make_torso
@@ -36,11 +36,12 @@ jobs:
           from Arm.arm import make_arm
           from Assemblies.assembly import make_robot
 
+          arm_parts, arm_compound = make_arm()
           checks = [
               ("leg", make_leg_assembly(export_parts=False)["upper_link"]),
               ("torso", make_torso(export_parts=False)["full"]),
               ("head", make_head(export_parts=False)["full"]),
-              ("arm", make_arm()),
+              ("arm", arm_compound),
               ("robot", make_robot(export_parts=False, merged=False)["full"]),
           ]
           for name, part in checks:
