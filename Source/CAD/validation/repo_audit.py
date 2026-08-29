@@ -38,27 +38,21 @@ def main():
     if not py_files:
         error("No CAD Python source files found under Source/CAD")
 
-    # The shared helper must resolve the actual repository root from
-    # Source/CAD/Master/build_common.py (parents[3]). A wrong root silently sends
-    # exports into the source tree.
     build_common = CAD / "Master" / "build_common.py"
     if build_common.exists():
         text = build_common.read_text(encoding="utf-8", errors="replace")
-        if "parents[3]" not in text.splitlines()[0:40].__str__():
+        if "parents[3]" not in text:
             error("build_common.py must resolve the repository root with parents[3]")
         if "CAD_STEP" not in text or "CAD_STL" not in text:
             error("build_common.py must export to canonical CAD_STEP/CAD_STL folders")
 
-    # Catch obvious stale path assumptions in source. Source files should not
-    # assume the historical pre-Source layout when locating the repository root.
+    # Heuristic for stale pre-Source path assumptions.
     for path in py_files:
         text = path.read_text(encoding="utf-8", errors="replace")
         rel = path.relative_to(ROOT)
         if "CAD/Master" in text and "parents[2]" in text and path.name != "repo_audit.py":
             warn(f"Historical path pattern found in {rel}; verify imports/root resolution")
 
-    # Catch dimensions hard-coded in part generators. This is a heuristic, not
-    # a ban: algorithm constants and hardware standards can legitimately exist.
     hardcoded = []
     for path in py_files:
         if path.name in {"build_common.py", "repo_audit.py"}:
@@ -74,32 +68,27 @@ def main():
     if hardcoded:
         warn(f"Found {len(hardcoded)} heuristic hard-coded-dimension candidates; review rather than blindly replacing them.")
 
-    # Concept/reference files must clearly declare non-final status.
     for path in sorted(CAD.rglob("*concept*.py")):
         text = path.read_text(encoding="utf-8", errors="replace").lower()
         if "concept" not in text[:2500] or "non-final" not in text[:2500]:
             warn(f"Concept file should clearly declare non-final status: {path.relative_to(ROOT)}")
 
-    # Parameter status vocabulary is mandatory.
     if PARAMS.exists():
         ptext = PARAMS.read_text(encoding="utf-8", errors="replace")
         for label in ("VERIFIED", "ASSUMED", "UNKNOWN", "BLOCKED"):
             if label not in ptext:
                 error(f"Parameter system is missing status label: {label}")
 
-    # Current implementation state must be explicit in the software handoff.
     if JOINTMAP.exists():
         jtext = JOINTMAP.read_text(encoding="utf-8", errors="replace")
         for marker in ('"current_cad_leg_dof": 8', '"current_cad_actuated_dof": 16', '"target_actuated_dof": 20', '"implementation_status": "NOT_IN_CAD"'):
             if marker not in jtext:
                 error(f"Joint map missing current/target implementation marker: {marker}")
-        if '"head_pan",' in jtext and '"axis": "Z"' not in jtext:
+        if '"id": "head_pan"' in jtext and '"id": "head_pan", "dof": "head", "axis": "Z"' not in jtext:
             error("Joint map does not document head pan as Z axis")
-        if '"head_pitch",' in jtext and '"axis": "Y"' not in jtext:
+        if '"id": "head_pitch"' in jtext and '"id": "head_pitch", "dof": "head", "axis": "Y"' not in jtext:
             error("Joint map does not document head pitch as Y axis")
 
-    # Both root READMEs exist. They should not disagree about the core 16-vs-20
-    # implementation state.
     readmes = [ROOT / "README.md", ROOT / "README.txt"]
     readme_texts = [p.read_text(encoding="utf-8", errors="replace") for p in readmes if p.exists()]
     if len(readme_texts) == 2:
