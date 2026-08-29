@@ -12,7 +12,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "Source"
 CAD = SOURCE / "CAD"
-for d in (SOURCE, CAD, CAD / "Master", CAD / "Legs", CAD / "Torso", CAD / "Head", CAD / "Arm", SOURCE / "Parameters"):
+for d in (
+    SOURCE, CAD, CAD / "Master", CAD / "Legs", CAD / "Torso", CAD / "Head",
+    CAD / "Arm", CAD / "Assemblies", SOURCE / "Parameters",
+):
     sys.path.insert(0, str(d))
 
 import build_common as bc
@@ -89,7 +92,6 @@ for nm, part in parts_to_check:
           f"{sx:.1f}x{sy:.1f}x{sz:.1f} <= {bx:.0f}^3")
 
 # --- current architecture versus target architecture ---
-# The current master_leg implementation generates hip-pitch + knee only.
 leg_parts = ML.make_leg_assembly(export_parts=False)
 current_leg_servo_count = int("hip_servo" in leg_parts) + int("knee_servo" in leg_parts)
 current_leg_dof = current_leg_servo_count * 4
