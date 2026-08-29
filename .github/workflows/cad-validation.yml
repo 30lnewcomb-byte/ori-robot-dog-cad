@@ -17,9 +17,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Static repository audit
-        run: python Source/CAD/validation/repo_audit.py
-
       - name: Install CAD dependencies
         run: python -m pip install --upgrade pip && python -m pip install -r Source/requirements.txt
 
@@ -51,20 +48,5 @@ jobs:
           print("CAD SMOKE BUILD: PASS")
           PY
 
-      - name: Leg validation
-        run: python Validation_and_Docs/Validation/validate_leg.py
-
-      - name: Robot validation
-        run: python Validation_and_Docs/Validation/validate_robot.py
-
-      - name: Wrist validation
-        run: python Validation_and_Docs/Validation/validate_wrist.py
-
-      - name: Load analysis
-        run: python Validation_and_Docs/Validation/analyze_loads.py
-
-      - name: Shaft analysis
-        run: python Validation_and_Docs/Validation/analyze_shafts.py
-
-      - name: Arm/wrist load analysis
-        run: python Validation_and_Docs/Validation/analyze_arm_wrist.py
+      - name: Full validation suite
+        run: python validate.py
