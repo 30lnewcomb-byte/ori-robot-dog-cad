@@ -43,7 +43,8 @@ def make_yaw_housing(p=PARAMS):
         bx, by = (a.mount_bolt_pcd / 2) * math.cos(ang), (a.mount_bolt_pcd / 2) * math.sin(ang)
         flange = flange.cut(cyl(a.mount_bolt_d / 2 + 0.1, 10, axis="X").translate((a.base_reach / 2 + 3, bx, by)))
     mount = box_centered(40, a.mount_bore_d - 6, 30).translate((a.base_reach + 14, 0, 0))
-    srv = make_htd45h(p).rotate((0, 0, 0), (1, 0, 0), 90).translate((a.base_reach + 14, 0, 0))
+    # Canonical servo shaft +Z -> +Y requires Rx(-90°).
+    srv = make_htd45h(p).rotate((0, 0, 0), (1, 0, 0), -90).translate((a.base_reach + 14, 0, 0))
     return housing.union(flange).union(mount).union(srv)
 
 
@@ -79,9 +80,9 @@ def _spur_gear(module, teeth, width, axis="X"):
 def make_forearm(p=PARAMS):
     """Forearm plus wrist block.
 
-    Grip servo and its spur gear now share the SAME +X shaft axis. The gear center
-    is in the wrist plane at x=L-13 and y=grip_servo_y; the passive tool gear is
-    translated to the same x plane at y=0, giving the parameterized 18 mm mesh.
+    Grip servo and spur gear share the same +X shaft axis. The gear center is in
+    the wrist plane at x=L-13, y=grip_servo_y; the passive tool gear is aligned
+    to the same x plane at y=0, giving the parameterized 18 mm mesh.
     """
     a = p.arm
     L = a.elbow_len
@@ -94,9 +95,10 @@ def make_forearm(p=PARAMS):
     wrist_x = L - 13.0
     wblock = box_centered(30, 60, a.link_t + 2).translate((wrist_x, 0, 0)).edges("|Y").fillet(2.0)
     pitch = make_htd45h(p).translate((wrist_x, 0, (a.link_t - 2) / 2 + 12))
-    roll = make_htd45h(p).rotate((0, 0, 0), (1, 0, 0), 90).translate((wrist_x, (a.link_w - 2) / 2 + 13, 0))
+    # Canonical +Z -> +X requires Ry(+90°).
+    roll = make_htd45h(p).rotate((0, 0, 0), (0, 1, 0), 90).translate((wrist_x, (a.link_w - 2) / 2 + 13, 0))
 
-    # Grip actuator: shaft MUST be along +X because the grip gear axis is X.
+    # Grip actuator + gear are both along +X; y=-18 gives the 18 mm center distance to the tool gear.
     gy = a.grip_servo_y
     grip = make_htd45h(p).rotate((0, 0, 0), (0, 1, 0), 90).translate((wrist_x, gy, 0))
     drive = _spur_gear(a.gear_module, a.gear_drive_teeth, 6, axis="X").translate((wrist_x, gy, 0))
@@ -104,40 +106,33 @@ def make_forearm(p=PARAMS):
 
 
 def make_gripper(p=PARAMS):
-    """Build a passive tool around a standard coupler.
+    """Build a passive tool around the standard coupler.
 
     Local tool frame:
       - coupler/gear axis = X
       - tool extends +X
       - the two finger pivots are separated in Y and rotate about Z.
 
-    The printed cam/finger arrangement is intentionally kept lightweight; final
-    grip kinematics remain a physical-validation item rather than being inferred
-    from a visually plausible static model.
+    The cam/finger arrangement remains a physical-validation item rather than
+    being inferred from a visually plausible static model.
     """
     a = p.arm
     coupler_x = a.coupler_face_w / 2.0
     R = a.finger_pivot_r
 
-    # Standard interchangeable face; centered on the local tool origin plane.
     disk = cyl(a.coupler_d / 2, a.coupler_face_w, axis="X").translate((coupler_x, 0, 0))
     for ang in (math.radians(120), math.radians(240)):
         bx, by = (a.coupler_d / 2 - 5) * math.cos(ang), (a.coupler_d / 2 - 5) * math.sin(ang)
         disk = disk.cut(cyl(a.tool_retain_d / 2 + 0.1, a.coupler_face_w + 2, axis="X").translate((coupler_x, bx, by)))
     disk = disk.cut(cyl(a.tool_dowel_d / 2 + 0.1, a.coupler_face_w + 2, axis="X").translate((coupler_x, 0, 0)))
 
-    # Passive tool gear is on the same X-facing plane as the wrist drive gear.
     tool_gear = _spur_gear(a.gear_module, a.gear_pinion_teeth, 6, axis="X")
-
-    # Eccentric cam representation: rotating shaft remains concentric; the cam lobe
-    # is offset in +Y to create the intended follower motion envelope.
     cam_lobe = cyl(a.cam_ecc + 3.0, 6, axis="X").translate((coupler_x, a.cam_ecc, 0))
     cam_hub = cyl(5.0, 6, axis="X").translate((coupler_x, 0, 0))
 
     pivot_x = coupler_x + 7.0
     finger_len = a.grip_depth
     finger = box_centered(finger_len, a.finger_w, a.coupler_face_w + 4).translate((pivot_x + finger_len / 2, 0, 0))
-    # Pivot and follower holes are vertical (Z axis), matching the intended finger rotation plane.
     finger = finger.cut(cyl(2.0, a.coupler_face_w + 8, axis="Z").translate((pivot_x, 0, 0)))
     finger = finger.cut(cyl(2.0, a.coupler_face_w + 8, axis="Z").translate((pivot_x, a.finger_drive_r, 0)))
     finger = finger.cut(box_centered(6, 4, a.coupler_face_w + 6).translate((pivot_x + finger_len - 2, 0, 0)))
@@ -155,7 +150,6 @@ def make_arm(p=PARAMS):
     elbow_x = a.base_reach + 28 + a.shoulder_len
     fore = make_forearm(p).translate((elbow_x, 0, 0))
     wrist_x = elbow_x + a.elbow_len
-    # Gripper gear center is x=0 locally; align it with the forearm wrist plane at x=wrist_x-13.
     grip = make_gripper(p).translate((wrist_x - 13, 0, 0))
     parts = {
         "yaw_housing": yaw,
