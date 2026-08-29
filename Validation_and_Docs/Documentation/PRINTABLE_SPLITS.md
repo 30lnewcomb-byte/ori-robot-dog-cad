@@ -1,48 +1,51 @@
-# Ori Robot Dog - Printable Part Breakdown (Bambu Lab A1 Mini, 180^3 mm)
+# Ori Robot Dog — Printable Part Breakdown
 
-Every printable part below was checked to fit the A1 Mini build volume. Parts
-larger than 180 mm are split and joined with alignment pins + M3 screw bosses
-designed for plastic fusion (per requirement #17).
+**Printer target:** Bambu Lab A1 Mini, 180 × 180 × 180 mm.
 
-## Per-part list (MAX dimension in each axis, mm)
-| Part | X | Y | Z | Qty (x4 legs) | Notes |
-|------|---|---|---|---------------|-------|
-| leg_upper_link | 176 | 54 | 30 | 4 | single print, print flat (X along bed) |
-| leg_lower_link | 177 | 40 | 42 | 4 | print flat |
-| leg_foot | 48 | 64 | 35 | 4 | print sole-down |
-| torso_front_half | 170 | 157 | 133 | 1 | print on side; <180 on all axes |
-| torso_rear_half | 178 | 157 | 133 | 1 | print on side |
-| head_shell | 90 | 70 | 70 | 1 | easy |
-| head_neck | 56 | 56 | 30 | 1 | |
+This document describes the current parametric CAD print strategy. Bounding boxes should be regenerated from the current source rather than copied from historical exports.
 
-## Splitting strategy
-- TORSO: full shell 340 long -> two halves at x=0 (170 / 178 long). Joined by:
-  * 2 alignment pins (4 mm dia) across the seam
-  * 3 M3 screw bosses (z = -H/4, 0, +H/4) for plastic-fusion + screw backup
-  * flat seam face (6 mm plate) maximizes glue/fusion surface area
-- LEGS: each link <180 in all axes -> NO split needed. The hollow box-tube
-  section prints cleanly on its side with the internal cable channel as a
-  bridging feature (use support = off where possible, sparse where needed).
-- HEAD: dome + neck both <180 -> single prints.
+## Current printable architecture
 
-## Recommended print orientation (FDM stiffness, requirement #18)
-- Links: lay along X (long axis on bed); wall loads act in Y (bending plane) ->
-  layer lines run across the bending direction for max inter-layer strength.
-- Torso halves: print on the largest flat face; ribs printed in-place.
-- Feet: print sole-down so the contact face is flat and the rim prints upward.
+| Part family | Current source | Split strategy | Notes |
+|---|---|---|---|
+| Master leg upper/lower links | `Source/CAD/Legs/master_leg.py` | No split | Long-axis-on-bed strategy; hollow structural tube |
+| Foot | `Source/CAD/Legs/master_leg.py` | No split | Sole-down concept; contact switch pocket |
+| Torso | `Source/CAD/Torso/torso.py` | 2 longitudinal halves | Full torso is 300 mm long, so it must be split for the A1 Mini |
+| Head | `Source/CAD/Head/head.py` | No split per current component | Dome, neck, and yoke remain below build envelope individually |
+| Arm | `Source/CAD/Arm/arm.py` | No split per current component | Subassemblies are individually checked by the validator |
+| Passive gripper | `Source/CAD/Arm/arm.py` | No split | Ø34 coupler and fingers are below the build envelope |
 
-## Assembly sequence (serviceability, requirement #19)
-1. Press 626ZZ bearings into hip/knee bores (interference fit, -0.02 mm).
-2. Bolt HTD-45H horns to upper-link proximal bosses (6x M2).
-3. Mount knee servo into lower-link saddle; connect horn to fork.
-4. Insert hip servo into torso bulkhead pocket; bolt upper link to horn.
-5. Join knee fork to upper-link clevis with knee pin + bearings.
-6. Bolt foot ankle cup to lower-link ankle; seat D2F switch in sole.
-7. Repeat for 4 legs (mirror FR/RL/RR).
-8. Install battery, RPi, Picos, controller, head (neck into torso top).
-9. Plastic-fuse torso halves; verify seam.
-10. (Future) remove front arm-port blanking plate; mount black arm.
+## Torso split
 
-## Heat-set inserts
-M3 inserts into: RPi tray bosses (4), servo controller (4), head neck flange (3),
-arm-port blanking plate (4), battery retention (optional).
+The torso is 300 mm long and is split at x=0 into front and rear halves. The current source provides seam alignment and fastener features. Exact printed dimensions must come from the current generator/validator rather than this document.
+
+## Manufacturing checks
+
+The automated suite checks every current generated printable component against the A1 Mini 180³ mm envelope. A successful check means only that the CAD bounding box fits; it does not prove print orientation, first-layer adhesion, support behavior, dimensional accuracy, or final mechanical strength.
+
+## Orientation intent
+
+- Structural links: long axis flat where practical to keep the main bending direction within favorable layer geometry.
+- Torso halves: use the broad split face as the primary assembly datum.
+- Feet: sole-oriented print strategy for a flat contact surface.
+- Small gears/fingers: flat orientation is preferred, subject to the final mechanical implementation and slicer checks.
+
+## Assembly sequence concept
+
+1. Install the 626ZZ bearing stacks and verify seating.
+2. Install HTD-45H servo hardware at the relevant current joints.
+3. Join the master leg joints and verify free movement before loading the leg.
+4. Install foot/contact-switch hardware.
+5. Repeat the validated master-leg architecture for FL/FR/RL/RR.
+6. Join and verify the two torso halves.
+7. Install the current head and arm assemblies.
+8. Install electronics and wiring only after the mechanical service paths are confirmed.
+9. Perform physical fit/strength validation before treating the CAD as build-proven.
+
+## Important current-state limitation
+
+The current leg CAD has **2 actuated joints per leg**. The four hip-yaw joints in the 20-DOF target architecture are not yet present, so no print plan should imply that those mechanisms already exist.
+
+## Heat-set inserts / fasteners
+
+The master parameters define nominal M3 insert and fastener dimensions, while specific locations are generated by the relevant CAD module. Final insert pull-out, screw engagement, and printed-hole accuracy require physical validation.
