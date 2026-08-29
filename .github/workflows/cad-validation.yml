@@ -36,7 +36,7 @@ jobs:
           from Arm.arm import make_arm
           from Assemblies.assembly import make_robot
 
-          arm_parts, arm_compound = make_arm()
+          _arm_parts, arm_compound = make_arm()
           checks = [
               ("leg", make_leg_assembly(export_parts=False)["upper_link"]),
               ("torso", make_torso(export_parts=False)["full"]),
@@ -50,3 +50,21 @@ jobs:
               print(name, "OK", tuple(round(d, 2) for d in dims))
           print("CAD SMOKE BUILD: PASS")
           PY
+
+      - name: Leg validation
+        run: python Validation_and_Docs/Validation/validate_leg.py
+
+      - name: Robot validation
+        run: python Validation_and_Docs/Validation/validate_robot.py
+
+      - name: Wrist validation
+        run: python Validation_and_Docs/Validation/validate_wrist.py
+
+      - name: Load analysis
+        run: python Validation_and_Docs/Validation/analyze_loads.py
+
+      - name: Shaft analysis
+        run: python Validation_and_Docs/Validation/analyze_shafts.py
+
+      - name: Arm/wrist load analysis
+        run: python Validation_and_Docs/Validation/analyze_arm_wrist.py
