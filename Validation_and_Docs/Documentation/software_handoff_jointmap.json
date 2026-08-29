@@ -1,0 +1,61 @@
+{
+  "schema": "ori.mechanical.handoff.jointmap/v1",
+  "robot": "Ori Robot Dog",
+  "coordinate_frame": "robot-centric: X=forward, Y=left, Z=up (mm, deg)",
+  "control_architecture": {
+    "description": "Non-exclusive control sources. AUTOPILOT, BROWSER, and VOICE all feed a shared CONTROL SYSTEM that issues commands to PICOS, which drive SERVOS. Browser may temporarily influence Ori while autopilot continues.",
+    "layers": ["AUTOPILOT", "BROWSER", "VOICE", "CONTROL_SYSTEM", "PICO(s)", "SERVOS"]
+  },
+  "actuator_baseline": {
+    "model": "Hiwonder HTD-45H",
+    "bus": "serial (HTD/LewanSoul protocol, 115200 baud, PH2.0-3P)",
+    "torque_nm": 4.41,
+    "range_deg": 240,
+    "shaft_mm": 6,
+    "count": 16
+  },
+  "bearings": {"type": "626ZZ", "od": 19, "id": 6, "w": 6, "count": 28},
+  "joints": [
+    {"id": "FL_hip_yaw",   "dof": "leg", "leg": "FL", "axis": "Y", "type": "rotation", "limits_deg": [-110, 110], "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "yaw about vertical; bearing 626ZZ pair"},
+    {"id": "FL_hip_pitch", "dof": "leg", "leg": "FL", "axis": "Y", "type": "rotation", "limits_deg": [-90, 90],  "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "pitch; upper link bolts to horn PCD25"},
+    {"id": "FL_knee",      "dof": "leg", "leg": "FL", "axis": "Y", "type": "rotation", "limits_deg": [-150, 0],  "servo": "HTD-45H", "location": "knee, upper/lower link", "notes": "drives lower link via 22mm horn"},
+    {"id": "FR_hip_yaw",   "dof": "leg", "leg": "FR", "axis": "Y", "type": "rotation", "limits_deg": [-110, 110], "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "mirror of FL"},
+    {"id": "FR_hip_pitch", "dof": "leg", "leg": "FR", "axis": "Y", "type": "rotation", "limits_deg": [-90, 90],  "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "mirror of FL"},
+    {"id": "FR_knee",      "dof": "leg", "leg": "FR", "axis": "Y", "type": "rotation", "limits_deg": [-150, 0],  "servo": "HTD-45H", "location": "knee", "notes": "mirror of FL"},
+    {"id": "RL_hip_yaw",   "dof": "leg", "leg": "RL", "axis": "Y", "type": "rotation", "limits_deg": [-110, 110], "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "mirror of FL"},
+    {"id": "RL_hip_pitch", "dof": "leg", "leg": "RL", "axis": "Y", "type": "rotation", "limits_deg": [-90, 90],  "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "mirror of FL"},
+    {"id": "RL_knee",      "dof": "leg", "leg": "RL", "axis": "Y", "type": "rotation", "limits_deg": [-150, 0],  "servo": "HTD-45H", "location": "knee", "notes": "mirror of FL"},
+    {"id": "RR_hip_yaw",   "dof": "leg", "leg": "RR", "axis": "Y", "type": "rotation", "limits_deg": [-110, 110], "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "mirror of FL"},
+    {"id": "RR_hip_pitch", "dof": "leg", "leg": "RR", "axis": "Y", "type": "rotation", "limits_deg": [-90, 90],  "servo": "HTD-45H", "location": "torso bulkhead, hip", "notes": "mirror of FL"},
+    {"id": "RR_knee",      "dof": "leg", "leg": "RR", "axis": "Y", "type": "rotation", "limits_deg": [-150, 0],  "servo": "HTD-45H", "location": "knee", "notes": "mirror of FL"},
+
+    {"id": "arm_yaw",      "dof": "arm", "axis": "Y", "type": "rotation", "limits_deg": [-180, 180], "servo": "HTD-45H", "location": "yaw housing (recessed in torso port)", "notes": "base rotation"},
+    {"id": "arm_shoulder", "dof": "arm", "axis": "Z", "type": "rotation", "limits_deg": [-120, 120], "servo": "HTD-45H", "location": "upper arm yoke", "notes": "shoulder pitch"},
+    {"id": "arm_elbow",    "dof": "arm", "axis": "Z", "type": "rotation", "limits_deg": [-150, 0],   "servo": "HTD-45H", "location": "forearm clevis", "notes": "elbow pitch"},
+    {"id": "arm_wrist_pitch", "dof": "arm", "axis": "Z", "type": "rotation", "limits_deg": [-120, 120], "servo": "HTD-45H", "location": "wrist block", "notes": "tool pitch"},
+    {"id": "arm_wrist_roll",  "dof": "arm", "axis": "X", "type": "rotation", "limits_deg": [-180, 180], "servo": "HTD-45H", "location": "wrist block", "notes": "tool roll, independent of grip"},
+    {"id": "arm_grip",        "dof": "arm", "axis": "Z", "type": "grip",     "limits_deg": [0, 72.9],    "servo": "HTD-45H", "location": "forearm wrist block (NOT in tool)", "notes": "drives passive gripper via gear+cam; jaw 86->0mm"},
+
+    {"id": "head_pan",   "dof": "head", "axis": "Y", "type": "rotation", "limits_deg": [-180, 180], "servo": "HTD-45H", "location": "neck", "notes": "head yaw"},
+    {"id": "head_pitch", "dof": "head", "axis": "Z", "type": "rotation", "limits_deg": [-90, 90],   "servo": "HTD-45H", "location": "pitch yoke", "notes": "head pitch"}
+  ],
+  "sensor_locations": {
+    "foot_contact": {"type": "Omron D2F-L microswitch", "count": 4, "location": "each foot sole", "axis": "Z", "notes": "replaceable; 1 per foot"},
+    "camera": {"type": "RPi Camera Module 3", "location": "head dome +X face", "axis": "X", "notes": "forward FOV"},
+    "microphone": {"type": "4-mic I2S array (OPTIONAL)", "location": "head crown", "notes": "OPTIONAL/FUTURE"},
+    "speaker": {"type": "28mm full-range (OPTIONAL)", "location": "head underside", "notes": "OPTIONAL/FUTURE"},
+    "tof": {"type": "VL53L1X (OPTIONAL)", "count": 2, "location": "head front pockets", "notes": "OPTIONAL/FUTURE obstacle sensing"},
+    "imu": {"type": "6/9-DOF breakout (ASSUMED)", "location": "torso, near centroid"}
+  },
+  "arm_chain": ["arm_yaw", "arm_shoulder", "arm_elbow", "arm_wrist_pitch", "arm_wrist_roll", "arm_grip"],
+  "gripper_interface": {
+    "type": "passive interchangeable",
+    "coupler_diameter_mm": 34,
+    "retention": "2x M3 (PCD 24) + 1x Ø4 dowel",
+    "transmission": "grip servo -> driven gear -> coupler gear -> eccentric cam -> 2 fingers",
+    "gear_center_distance_mm": 18,
+    "mass_g": 22,
+    "max_payload_g": 500
+  },
+  "servo_id_assignment_note": "IDs are NOT yet assigned in CAD; assign sequentially per bus chain at firmware bring-up. Bus: all 16 HTD-45H share one serial bus via the Hiwonder controller. Suggest leg-grouping: FL/FR on one Pico gait axis, RL/RR on another, arm+head on the third (matches '2-3 Pico' plan)."
+}

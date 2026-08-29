@@ -1,0 +1,21 @@
+SECTION,COMPONENT,MANUFACTURER,MODEL,QTY,DIMENSIONS_MM,SOURCE,EST_PRICE_USD,STATUS,NOTES
+REQUIRED,Actuator (hip+knee),Hiwonder,HTD-45H,12,51.1x20.14x40,hiwonder.com VERIFIED,24.99,REQUIRED,8 leg joints (4x2) + 4 spare; 45kg.cm @11.1V, PH2.0-3P, 6mm double shaft
+REQUIRED,Actuator (arm 6-DOF),Hiwonder,HTD-45H,6,51.1x20.14x40,hiwonder.com VERIFIED,24.99,REQUIRED,base yaw + shoulder + elbow + wrist pitch + wrist roll + gripper; gray arm, reuse baseline
+REQUIRED,Actuator (head 2-DOF),Hiwonder,HTD-45H,2,51.1x20.14x40,hiwonder.com VERIFIED,24.99,REQUIRED,neck pan (yaw) + pitch yoke; head inertia tiny, ample margin
+REQUIRED,Main controller,Raspberry Pi,Pi 4 Model B,1,85.6x56.5x21,VERIFIED (forum),35,FUTURE_PURCHASE,4x USB, runs Ori OS/AI; mounting holes 58x49 PCD, 2.9mm
+REQUIRED,Leg controller,Raspberry Pi,Pico,3,51x21x5,VERIFIED (std),4,REQUIRED,one per leg-pair or per gait axis; 2.1mm holes
+REQUIRED,Servo controller,Hiwonder,Bus Servo Controller,1,58x42x12,hiwonder wiki VERIFIED,39.99,REQUIRED,ARM Cortex-M3, 74HC126 bus driver, drives HTD-45H over serial
+REQUIRED,Battery,HRB / CNHL,3S 2200mAh 11.1V LiPo,1,106x34x24,VERIFIED (vendor),17.99,FUTURE_PURCHASE,XT60 connector, 168g; matches torso bay
+REQUIRED,Foot contact switch,Omron,D2F-L,4,12.2x6x6.5 (lever ~12),VERIFIED body,2.5,REQUIRED,ultra-subminiature; hinge lever; 1 per foot
+REQUIRED,Hip/Knee/arm bearings,Generic,626ZZ (6x19x6),28,6x19x6,VERIFIED (bearingsdirect),1.2,REQUIRED,2 per joint x (8 leg + 6 arm) =28; match 6mm servo shaft
+REQUIRED,IMU breakout,Generic,6-DOF/9-DOF,1,25x20x5,ASSUMED,8,REQUIRED,MPU6050/9250 class
+REQUIRED,Heat-set inserts,M3 (brass),,~60,od4 x len5,ASSUMED typical,0.1,REQUIRED,into printed bosses (legs + arm mount + head)
+REQUIRED,Fasteners,M3x6 / M3x12 / M2,self-tap & cap,~120,3mm dia,VERIFIED (Hiwonder: M3x6 horn, M2 self-tap),0.05,REQUIRED,horn centre M3x6, flange M3, horn holes M2; arm flange 4x M3
+OPTIONAL,Camera,Raspberry Pi,Camera Module 3,1,25x24 board / 8mm lens,VERIFIED (rpi),25,OPTIONAL,head forward FOV; mounted in dome face
+OPTIONAL,Microphone array,Generic,4-mic I2S,1,~50mm ring,ASSUMED,15,OPTIONAL,voice capture on crown
+OPTIONAL,Speaker,Generic,28mm full-range,1,28 dia,ASSUMED,6,OPTIONAL,underside of head
+OPTIONAL,ToF sensor,Generic,VL53L1X,2,~10x12,ASSUMED,4,OPTIONAL,front obstacle sensing (pockets reserved)
+REQUIRED,Metal shafts (reinforcement),Generic,Ground steel 6mm,10,"6 dia, len per joint",ASSUMED typical,0.5,REQUIRED,hip+knee (legs) + shoulder+elbow+wrist (arm); 626ZZ bore; circlip-ended; see analyze_shafts.py (5.8-44.7x margin)
+REQUIRED,Gripper hardware,Generic,M3x6 retain + Ø4 dowel,1 set,2x M3 + Ø4,VERIFIED typical,0.2,REQUIRED,coupler retention (2x M3 PCD24 + 1x Ø4 dowel); per passive tool
+FUTURE,Arm gripper (passive),Printed PETG + HTD-45H in wrist,gear/cam 2-finger,1,22g tool / Ø34 coupler,DESIGNED (arm.py),0,FUTURE,servo-in-wrist: grip HTD-45H stays in forearm; passive interchangeable tool = coupler disk + coupler gear + eccentric cam + 2 fingers (no servo/motor/battery); gear center 18mm, stroke 72.9deg, span 0-86mm; HTD-45H holding torque retains when off
+

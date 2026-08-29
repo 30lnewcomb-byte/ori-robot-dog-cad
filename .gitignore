@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# NOTE: CAD_STEP/*.step and CAD_STL/*.stl ARE tracked (they are the deliverable).

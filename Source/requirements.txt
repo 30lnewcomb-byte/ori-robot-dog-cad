@@ -1,0 +1,4 @@
+# Ori Robot Dog — Python/CadQuery CAD environment
+# Usage:  pip install -r requirements.txt
+# (CadQuery pulls in OCP/OCCT; a C++ toolchain is NOT required — wheels provided.)
+cadquery==2.8.0
