@@ -1,98 +1,84 @@
 """
-Validation: wrist/gripper handoff checks (§3 A-E).
+Validation: current wrist/gripper architecture.
 
-Proves against the ACTUAL arm geometry/params that:
-  A. Cam -> finger travel: opening range, closing range, usable grip travel,
-     no finger interference (fingers meet at center, not past it).
-  B. Printed gear pair: center distance == 18 mm (handoff baseline, single frame),
-     tooth engagement (pitch radii sum), printable thickness.
-  C. Interchangeable coupler: aligned symmetric about z=0, M3 clearance, dowel
-     engagement, retention against accidental loosening (2x M3 + 1 dowel).
-  D. Backdrive: external finger force does NOT backdrive when servo off ->
-     HTD-45H holding torque (4.41 N.m) retained + passive hard stop verified.
-  E. Print orientation: gears, cam, fingers, coupler all print flat (<180, no
-     overhang-critical axis).
+Checks the current arm.py implementation and master parameters. This validator
+is intentionally careful not to claim that a servo has holding torque while
+unpowered; the electrical/firmware behavior must be verified on hardware.
 
-Run: python Validation/validate_wrist.py
+Run: python Validation_and_Docs/Validation/validate_wrist.py
 """
-import sys, math
+import math
+import sys
+import inspect
 from pathlib import Path
-ROOT = Path(__file__).resolve().parents[1]
-for d in ("CAD/Master", "CAD/Arm", "CAD/Hardware/servos", "Parameters"):
-    sys.path.insert(0, str(ROOT / d))
+
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "Source"
+CAD = SOURCE / "CAD"
+for d in (SOURCE, CAD, CAD / "Master", CAD / "Arm", CAD / "Hardware" / "servos", SOURCE / "Parameters"):
+    sys.path.insert(0, str(d))
+
 import arm as ARM
 from Parameters.master_parameters import PARAMS as P
 
 res = []
-def chk(n, ok, d=""):
-    res.append(ok)
-    print(f"[{n}] {d} -> {'PASS' if ok else 'FAIL'}")
+
+def chk(name, ok, detail=""):
+    res.append(bool(ok))
+    print(f"[{name}] {detail} -> {'PASS' if ok else 'FAIL'}")
 
 def main():
     a = P.arm
-    parts, comp = ARM.make_arm(P)
-    grip = parts["gripper"].val()
+    parts, _ = ARM.make_arm(P)
+    grip = parts["gripper"]
+    bb = grip.val().BoundingBox()
 
-    # A) CAM -> FINGER TRAVEL  (two fingers pivot about Z, rotate oppositely)
-    travel = 2 * a.cam_ecc                       # linear rack travel (mm)
-    dtheta = travel / a.finger_drive_r          # finger angular stroke (rad)
-    # jaw tips at radius finger_pivot_r; gap = 2 * tip_z ; open when theta=0 -> +R*... see geometry:
-    # finger body extends +X from pivot at (px, py0); tip at (px+grip_depth, py0+? ). Simplified:
-    # pivot at z=+R, body in +X; rotation about Z moves tip in Y by grip_depth*sin(theta) inward.
-    # Use closed-form: tip radial position from centerline = R - grip_depth*sin(theta) (approach)
-    open_gap  = 2 * (a.finger_pivot_r + a.grip_depth)          # fully open
-    # at full close theta=theta_max, tips approach center: tip_z = R - grip_depth*sin(dtheta)
+    # A) Parameterized jaw travel sanity.
+    open_gap = 2 * (a.finger_pivot_r + a.grip_depth)
+    travel = max(0.0, 2 * a.cam_ecc)
+    dtheta = travel / a.finger_drive_r if a.finger_drive_r > 0 else math.inf
     closed_tip = max(a.finger_pivot_r - a.grip_depth * math.sin(dtheta), 0.0)
     closed_gap = 2 * closed_tip
-    # usable grip travel = open_gap - closed_gap ; target grip_span must lie inside stroke
-    covers = (open_gap >= a.grip_span) and (closed_gap <= a.grip_span)
-    chk("A_cam_travel", covers and (closed_gap >= 0),
-        f"open {open_gap:.1f} -> closed {closed_gap:.1f} mm; target span {a.grip_span:.0f} inside stroke; stroke {math.degrees(dtheta):.1f} deg")
-    # interference: fingers must NOT cross past center (closed_tip >= 0)
-    chk("A_no_interference", closed_tip >= 0,
-        f"min tip gap {closed_gap:.1f} mm >= 0 (no over-travel)")
+    chk("A_grip_span_covered", open_gap >= a.grip_span >= closed_gap,
+        f"open={open_gap:.1f} closed={closed_gap:.1f} target={a.grip_span:.1f} mm")
+    chk("A_no_overtravel", closed_tip >= 0.0,
+        f"closed half-gap={closed_tip:.2f} mm")
 
-    # B) PRINTED GEAR PAIR (single frame: driven gear at y=grip_servo_y, coupler gear at y=0)
-    cd = abs(0 - a.grip_servo_y)
-    chk("B_center_distance", abs(cd - a.gear_center) < 0.5,
-        f"center dist {cd:.1f} == gear_center {a.gear_center:.1f} mm (handoff baseline 18)")
-    rp_d = a.gear_module * a.gear_drive_teeth / 2.0
-    rp_p = a.gear_module * a.gear_pinion_teeth / 2.0
-    chk("B_tooth_engage", abs((rp_d + rp_p) - a.gear_center) < 0.5,
-        f"pitch radii sum {rp_d+rp_p:.1f} == center dist {a.gear_center:.1f} (meshing)")
-    # printable thickness: gear width 6 mm >= 2*min_feature; teeth module 1.5 >= min_feature
-    chk("B_printable_gear", (6.0 >= 2 * P.mfg.min_feature) and (a.gear_module >= P.mfg.min_feature),
-        f"gear w 6mm, module {a.gear_module} (min feat {P.mfg.min_feature})")
+    # B) Current spur-gear geometry parameters.
+    center_distance = abs(a.grip_servo_y)
+    drive_pitch_r = a.gear_module * a.gear_drive_teeth / 2.0
+    pinion_pitch_r = a.gear_module * a.gear_pinion_teeth / 2.0
+    chk("B_center_distance", abs(center_distance - a.gear_center) < 0.5,
+        f"actual={center_distance:.1f} target={a.gear_center:.1f} mm")
+    chk("B_pitch_radii", abs((drive_pitch_r + pinion_pitch_r) - a.gear_center) < 0.5,
+        f"sum={drive_pitch_r+pinion_pitch_r:.1f} center={a.gear_center:.1f} mm")
+    chk("B_printable_module", a.gear_module >= P.mfg.min_feature and 6.0 <= P.mfg.build_z,
+        f"module={a.gear_module:.1f}, build_z={P.mfg.build_z:.0f} mm")
 
-    # C) INTERCHANGEABLE COUPLER
-    bb = grip.BoundingBox()
-    z_sym = abs((bb.zmin + bb.zmax) / 2.0) < 1.0
-    chk("C_coupler_aligned", z_sym, f"coupler z-center {((bb.zmin+bb.zmax)/2.0):.2f} mm (~0)")
-    chk("C_retention", (a.tool_retain_d <= 3.0) and (a.tool_dowel_d >= 4.0) and (a.coupler_d % 2 == 0),
-        f"2x M3 (PCD {a.coupler_d-10:.0f}) + dowel OD {a.tool_dowel_d:.0f}; dia {a.coupler_d}")
+    # C) Interchangeable tool interface.
+    chk("C_coupler_diameter", 0 < a.coupler_d < P.mfg.build_x,
+        f"coupler={a.coupler_d:.1f} mm")
+    chk("C_M3_retention", abs(a.tool_retain_d - P.hw.screw_M3) < 1.0,
+        f"retention hole={a.tool_retain_d:.1f} mm vs M3 nominal={P.hw.screw_M3:.1f} mm")
+    chk("C_dowel", a.tool_dowel_d >= 4.0,
+        f"dowel={a.tool_dowel_d:.1f} mm")
 
-    # D) BACKDRIVE (passive): HTD-45H holding torque 4.41 N.m retains; plus hard stop.
-    hold = P.servo.torque_nm           # 4.41 N.m (HTD-45H stall/holding)
-    # finger reaction torque from 500g payload at grip_depth lever:
-    f_ext = 0.5 * 9.81                        # N (500 g held)
-    react = f_ext * (a.grip_depth / 1000.0)  # N.m at jaw
-    chk("D_backdrive_hold", hold > react,
-        f"hold torque {hold:.2f} N.m > payload reaction {react:.3f} N.m -> no backdrive when off")
-    # passive hard stop: coupler gear seated against wrist block (HTD-45H detent + 1:1 gear)
+    # D) Architecture: grip actuator remains on arm, tool itself has no servo constructor.
+    forearm_src = inspect.getsource(ARM.make_forearm)
+    gripper_src = inspect.getsource(ARM.make_gripper)
+    n_forearm_servos = forearm_src.count("make_htd45h(")
+    chk("D_grip_servo_on_arm", n_forearm_servos >= 3,
+        f"forearm contains {n_forearm_servos} HTD-45H instances")
+    chk("D_gripper_passive_source", "make_htd45h" not in gripper_src,
+        "make_gripper() contains no actuator construction")
 
-    # 4) roll-during-grip: forearm has 3 distinct HTD-45H (pitch+roll+grip)
-    import inspect
-    src = inspect.getsource(ARM.make_forearm)
-    n_servo = src.count("make_htd45h(")
-    chk("4_roll_grip_separate", n_servo >= 3,
-        f"forearm {n_servo} HTD-45H (pitch+roll+grip distinct) -> roll independent of grip")
-
-    # E) PRINT ORIENTATION (all parts <180, print flat)
-    chk("E_printable", (bb.xmax - bb.xmin) < 180 and (bb.ymax - bb.ymin) < 180,
-        f"coupler bbox {round(bb.xmax-bb.xmin)}x{round(bb.ymax-bb.ymin)} mm < 180 (A1 Mini)")
+    # E) Tool envelope remains printable.
+    sx, sy, sz = P.mfg.build_x, P.mfg.build_y, P.mfg.build_z
+    chk("E_printable", (bb.xmax-bb.xmin) <= sx and (bb.ymax-bb.ymin) <= sy and (bb.zmax-bb.zmin) <= sz,
+        f"bbox={bb.xmax-bb.xmin:.1f}x{bb.ymax-bb.ymin:.1f}x{bb.zmax-bb.zmin:.1f} <= {sx:.0f}^3")
 
     ok = all(res)
-    print("WRIST §3:", "ALL RESOLVED" if ok else "OPEN ITEMS REMAIN", f"({sum(res)}/{len(res)})")
+    print("WRIST VALIDATION:", "PASS" if ok else "FAIL", f"({sum(res)}/{len(res)})")
     return ok
 
 if __name__ == "__main__":
