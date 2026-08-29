@@ -46,22 +46,37 @@ for k in ("upper_link", "lower_link", "foot"):
     ok = sx <= bx and sy <= by and sz <= bz
     check(f"print fit {k}", ok, f"{sx:.0f}x{sy:.0f}x{sz:.0f} <= {bx:.0f}^3")
 
-# --- H: hip servo envelope, derived from the actual servo parameters ---
+# --- H: hip servo envelope in installed +Y axis frame ---
+# Canonical HTD-45H envelope is X=body_long, Y=body_tall, Z=body_short.
+# The leg rotates the servo about X so its shaft becomes +Y. Thus canonical Z
+# plus shaft protrusion is installed Y, while canonical Y becomes installed Z.
 hs = bc.size_of(parts["hip_servo"])
-check("hip servo body length", abs(hs[0] - p.servo.body_long) < 0.5, f"X={hs[0]:.2f} vs {p.servo.body_long:.2f}")
-check("hip servo body height", abs(hs[1] - p.servo.body_tall) < 0.5, f"Y={hs[1]:.2f} vs {p.servo.body_tall:.2f}")
-check("hip servo Z span", abs(hs[2] - (p.servo.body_short + 2*p.servo.shaft_len_each_side)) < 0.5,
-      f"Z={hs[2]:.2f} vs {p.servo.body_short + 2*p.servo.shaft_len_each_side:.2f}")
+expected_installed = (
+    p.servo.body_long,
+    p.servo.body_short + 2 * p.servo.shaft_len_each_side,
+    p.servo.body_tall,
+)
+check("hip servo body length", abs(hs[0] - expected_installed[0]) < 0.5,
+      f"X={hs[0]:.2f} vs {expected_installed[0]:.2f}")
+check("hip servo installed radial span", abs(hs[1] - expected_installed[1]) < 0.5,
+      f"Y={hs[1]:.2f} vs {expected_installed[1]:.2f}")
+check("hip servo installed height", abs(hs[2] - expected_installed[2]) < 0.5,
+      f"Z={hs[2]:.2f} vs {expected_installed[2]:.2f}")
 
-# --- C: bearing/shaft interface and horn PCD ---
+# --- C: bearing/shaft interface and canonical servo geometry ---
 check("626ZZ bore == servo shaft", abs(p.hw.bearing_626_id - p.servo.shaft_d) < 1e-6,
       f"bearing {p.hw.bearing_626_id:.1f} mm vs shaft {p.servo.shaft_d:.1f} mm")
 from CAD.Hardware.servos.htd45h import make_htd45h
 srv = make_htd45h()
-check("servo envelope matches params", abs(bc.size_of(srv)[2] - (p.servo.body_short + 2*p.servo.shaft_len_each_side)) < 0.5,
-      f"Z span={bc.size_of(srv)[2]:.2f} mm")
+canonical = bc.size_of(srv)
+check("servo canonical X matches params", abs(canonical[0] - p.servo.body_long) < 0.5,
+      f"X={canonical[0]:.2f} vs {p.servo.body_long:.2f}")
+check("servo canonical Y matches params", abs(canonical[1] - p.servo.body_tall) < 0.5,
+      f"Y={canonical[1]:.2f} vs {p.servo.body_tall:.2f}")
+check("servo canonical Z matches params+shafts", abs(canonical[2] - expected_installed[1]) < 0.5,
+      f"Z={canonical[2]:.2f} vs {expected_installed[1]:.2f}")
 
-# --- A: chain check — upper link is centered at its own half-length ---
+# --- A: chain check ---
 cx_up = (bc.bounds(parts["upper_link"])[0] + bc.bounds(parts["upper_link"])[1]) / 2
 check("upper centered near x=L/2", abs(cx_up - p.leg.upper_link_length / 2) < 6,
       f"cx={cx_up:.1f} vs {p.leg.upper_link_length/2:.1f}")
@@ -75,11 +90,11 @@ check("leg reaches ground", kw["standing_margin"] > 0,
 check("link Y < torso width", p.leg.link_w + 12 < p.torso.width,
       f"link {p.leg.link_w}+12 vs torso {p.torso.width}")
 
-print(f"{'CHECK':32s} {'RESULT':6s} DETAIL")
-print("-" * 76)
+print(f"{'CHECK':36s} {'RESULT':6s} DETAIL")
+print("-" * 82)
 for n, r, d in rows:
-    print(f"{n:32s} {r:6s} {d}")
+    print(f"{n:36s} {r:6s} {d}")
 npass = sum(1 for _, r, _ in rows if r == "PASS")
-print("-" * 76)
+print("-" * 82)
 print(f"{npass}/{len(rows)} checks passed")
 sys.exit(0 if npass == len(rows) else 1)
