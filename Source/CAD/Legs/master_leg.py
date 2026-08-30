@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
 
 def make_leg_standing(fwd_offset=70.0, p=PARAMS):
-    """Build one leg in a standing pose with hip at the origin."""
+    """Build one leg in a standing pose with a level nominal passive foot."""
     import math as _m
     a = p.leg.upper_link_length
     b = p.leg.lower_link_length
@@ -195,8 +195,13 @@ def make_leg_standing(fwd_offset=70.0, p=PARAMS):
     up = up_raw.rotate((0, 0, 0), (0, 1, 0), Ry1)
     Ry2 = -_m.degrees(d2)
     lo = lo_raw.rotate((0, 0, 0), (0, 1, 0), Ry2).translate(knee)
-    ft = ft_raw.rotate((0, 0, 0), (0, 1, 0), Ry2).translate(ankle)
-    sw = sw_raw.rotate((0, 0, 0), (0, 1, 0), Ry2).translate(ankle)
+
+    # The ankle is intentionally passive in this nominal standing pose, so keep
+    # the sole level with gravity rather than rotating the whole foot with the
+    # lower-link axis. The ankle bearing still permits the real assembly to
+    # articulate and absorb terrain/load changes.
+    ft = ft_raw.translate(ankle)
+    sw = sw_raw.translate(ankle)
 
     hs = _servo_axis_y(p).rotate((0, 0, 0), (0, 1, 0), Ry1)
     ks = _servo_axis_y(p).rotate((0, 0, 0), (0, 1, 0), Ry2).translate(knee)
